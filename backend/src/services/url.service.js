@@ -13,7 +13,6 @@ export const createShortUrl = async ({
   const alias =
     typeof customAlias === "string" ? customAlias.trim() : "";
 
-  // User provided a custom alias
   if (alias) {
     try {
       return await Url.create({
@@ -31,8 +30,11 @@ export const createShortUrl = async ({
     }
   }
 
-  // Generate a random Base62 code
-  for (let attempt = 1; attempt <= MAX_GENERATION_ATTEMPTS; attempt += 1) {
+  for (
+    let attempt = 1;
+    attempt <= MAX_GENERATION_ATTEMPTS;
+    attempt += 1
+  ) {
     const shortCode = generateShortCode(7);
 
     try {
@@ -43,7 +45,6 @@ export const createShortUrl = async ({
         user: userId,
       });
     } catch (error) {
-      // Another request may have generated the same code
       if (error.code === 11000) {
         continue;
       }
@@ -56,4 +57,62 @@ export const createShortUrl = async ({
     "Unable to generate a unique short code. Please try again.",
     503
   );
+};
+
+export const resolveShortUrl = async (shortCode) => {
+  const currentTime = new Date();
+
+  const url = await Url.findOneAndUpdate(
+    {
+      shortCode,
+      isActive: true,
+      $or: [
+        { expiresAt: null },
+        { expiresAt: { $exists: false } },
+        { expiresAt: { $gt: currentTime } },
+      ],
+    },
+    {
+      $inc: { clicks: 1 },
+      $set: { lastAccessedAt: currentTime },
+    },
+    {
+      new: true,
+    }
+  );
+
+  if (url) {
+    return url.originalUrl;
+  }
+
+  const unavailableUrl = await Url.findOne({ shortCode })
+    .select("isActive expiresAt")
+    .lean();
+
+  if (!unavailableUrl) {
+    throw new AppError("Short URL was not found", 404);
+  }
+
+  if (!unavailableUrl.isActive) {
+    throw new AppError("This short URL has been disabled", 410);
+  }
+
+  if (
+    unavailableUrl.expiresAt &&
+    unavailableUrl.expiresAt.getTime() <= currentTime.getTime()
+  ) {
+    throw new AppError("This short URL has expired", 410);
+  }
+
+  throw new AppError("Short URL is unavailable", 404);
+};
+
+export const getUrlDetailsByShortCode = async (shortCode) => {
+  const url = await Url.findOne({ shortCode }).lean();
+
+  if (!url) {
+    throw new AppError("Short URL was not found", 404);
+  }
+
+  return url;
 };

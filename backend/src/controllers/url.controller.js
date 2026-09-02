@@ -1,4 +1,8 @@
-import { createShortUrl } from "../services/url.service.js";
+import {
+  createShortUrl,
+  resolveShortUrl,
+  getUrlDetailsByShortCode,
+} from "../services/url.service.js";
 import { AppError } from "../utils/appError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
@@ -35,7 +39,10 @@ const validateExpiryDate = (expiryValue) => {
     Number.isNaN(expiryDate.getTime()) ||
     expiryDate.getTime() <= Date.now()
   ) {
-    throw new AppError("Expiry date must be a valid future date", 400);
+    throw new AppError(
+      "Expiry date must be a valid future date",
+      400
+    );
   }
 
   return expiryDate;
@@ -44,8 +51,11 @@ const validateExpiryDate = (expiryValue) => {
 export const createUrl = asyncHandler(async (req, res) => {
   const { originalUrl, customAlias, expiresAt } = req.body;
 
-  const normalizedOriginalUrl = validateAndNormalizeUrl(originalUrl);
-  const normalizedExpiryDate = validateExpiryDate(expiresAt);
+  const normalizedOriginalUrl =
+    validateAndNormalizeUrl(originalUrl);
+
+  const normalizedExpiryDate =
+    validateExpiryDate(expiresAt);
 
   let normalizedAlias = null;
 
@@ -70,7 +80,8 @@ export const createUrl = asyncHandler(async (req, res) => {
   });
 
   const baseUrl =
-    process.env.BASE_URL || `${req.protocol}://${req.get("host")}`;
+    process.env.BASE_URL ||
+    `${req.protocol}://${req.get("host")}`;
 
   return res.status(201).json({
     success: true,
@@ -87,3 +98,41 @@ export const createUrl = asyncHandler(async (req, res) => {
     },
   });
 });
+
+export const redirectToOriginalUrl = asyncHandler(
+  async (req, res) => {
+    const { shortCode } = req.params;
+
+    const originalUrl = await resolveShortUrl(shortCode);
+
+    return res.redirect(302, originalUrl);
+  }
+);
+
+export const getUrlDetails = asyncHandler(
+  async (req, res) => {
+    const { shortCode } = req.params;
+
+    const url = await getUrlDetailsByShortCode(shortCode);
+
+    const baseUrl =
+      process.env.BASE_URL ||
+      `${req.protocol}://${req.get("host")}`;
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        id: url._id,
+        originalUrl: url.originalUrl,
+        shortCode: url.shortCode,
+        shortUrl: `${baseUrl}/${url.shortCode}`,
+        clicks: url.clicks,
+        isActive: url.isActive,
+        expiresAt: url.expiresAt,
+        lastAccessedAt: url.lastAccessedAt,
+        createdAt: url.createdAt,
+        updatedAt: url.updatedAt,
+      },
+    });
+  }
+);

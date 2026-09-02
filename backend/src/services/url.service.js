@@ -116,3 +116,85 @@ export const getUrlDetailsByShortCode = async (shortCode) => {
 
   return url;
 };
+
+export const getPaginatedUrls = async ({
+  page = 1,
+  limit = 10,
+}) => {
+  const parsedPage = Number.parseInt(page, 10);
+  const parsedLimit = Number.parseInt(limit, 10);
+
+  const currentPage =
+    Number.isNaN(parsedPage) || parsedPage < 1
+      ? 1
+      : parsedPage;
+
+  const pageSize =
+    Number.isNaN(parsedLimit) || parsedLimit < 1
+      ? 10
+      : Math.min(parsedLimit, 100);
+
+  const skip = (currentPage - 1) * pageSize;
+
+  const [urls, totalUrls] = await Promise.all([
+    Url.find()
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(pageSize)
+      .lean(),
+
+    Url.countDocuments(),
+  ]);
+
+  return {
+    urls,
+    pagination: {
+      currentPage,
+      pageSize,
+      totalUrls,
+      totalPages: Math.ceil(totalUrls / pageSize),
+    },
+  };
+};
+
+export const updateUrlByShortCode = async (
+  shortCode,
+  updates
+) => {
+  const url = await Url.findOneAndUpdate(
+    { shortCode },
+    { $set: updates },
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
+
+  if (!url) {
+    throw new AppError("Short URL was not found", 404);
+  }
+
+  return url;
+};
+
+export const deactivateUrlByShortCode = async (
+  shortCode
+) => {
+  const url = await Url.findOneAndUpdate(
+    { shortCode },
+    {
+      $set: {
+        isActive: false,
+      },
+    },
+    {
+      new: true,
+    }
+  );
+
+  if (!url) {
+    throw new AppError("Short URL was not found", 404);
+  }
+
+  return url;
+};

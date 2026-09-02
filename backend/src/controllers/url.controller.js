@@ -2,6 +2,9 @@ import {
   createShortUrl,
   resolveShortUrl,
   getUrlDetailsByShortCode,
+  getPaginatedUrls,
+  updateUrlByShortCode,
+  deactivateUrlByShortCode,
 } from "../services/url.service.js";
 import { AppError } from "../utils/appError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
@@ -132,6 +135,115 @@ export const getUrlDetails = asyncHandler(
         lastAccessedAt: url.lastAccessedAt,
         createdAt: url.createdAt,
         updatedAt: url.updatedAt,
+      },
+    });
+  }
+);
+
+export const getUrls = asyncHandler(async (req, res) => {
+  const result = await getPaginatedUrls({
+    page: req.query.page,
+    limit: req.query.limit,
+  });
+
+  const baseUrl =
+    process.env.BASE_URL ||
+    `${req.protocol}://${req.get("host")}`;
+
+  return res.status(200).json({
+    success: true,
+    data: {
+      urls: result.urls.map((url) => ({
+        id: url._id,
+        originalUrl: url.originalUrl,
+        shortCode: url.shortCode,
+        shortUrl: `${baseUrl}/${url.shortCode}`,
+        clicks: url.clicks,
+        isActive: url.isActive,
+        expiresAt: url.expiresAt,
+        lastAccessedAt: url.lastAccessedAt,
+        createdAt: url.createdAt,
+        updatedAt: url.updatedAt,
+      })),
+      pagination: result.pagination,
+    },
+  });
+});
+
+export const updateUrl = asyncHandler(async (req, res) => {
+  const { shortCode } = req.params;
+  const requestBody = req.body || {};
+  const updates = {};
+
+  if (
+    Object.prototype.hasOwnProperty.call(
+      requestBody,
+      "isActive"
+    )
+  ) {
+    if (typeof requestBody.isActive !== "boolean") {
+      throw new AppError(
+        "isActive must be either true or false",
+        400
+      );
+    }
+
+    updates.isActive = requestBody.isActive;
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(
+      requestBody,
+      "expiresAt"
+    )
+  ) {
+    updates.expiresAt =
+      requestBody.expiresAt === null ||
+      requestBody.expiresAt === ""
+        ? null
+        : validateExpiryDate(requestBody.expiresAt);
+  }
+
+  if (Object.keys(updates).length === 0) {
+    throw new AppError(
+      "Provide isActive or expiresAt to update",
+      400
+    );
+  }
+
+  const url = await updateUrlByShortCode(
+    shortCode,
+    updates
+  );
+
+  return res.status(200).json({
+    success: true,
+    message: "Short URL updated successfully",
+    data: {
+      id: url._id,
+      shortCode: url.shortCode,
+      isActive: url.isActive,
+      expiresAt: url.expiresAt,
+      updatedAt: url.updatedAt,
+    },
+  });
+});
+
+export const deactivateUrl = asyncHandler(
+  async (req, res) => {
+    const { shortCode } = req.params;
+
+    const url = await deactivateUrlByShortCode(
+      shortCode
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Short URL deactivated successfully",
+      data: {
+        id: url._id,
+        shortCode: url.shortCode,
+        isActive: url.isActive,
       },
     });
   }

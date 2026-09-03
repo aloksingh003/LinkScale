@@ -142,3 +142,38 @@ export const login = asyncHandler(
     });
   }
 );
+
+export const getCurrentUser = asyncHandler(
+  async (req, res) => {
+    return res.status(200).json({
+      success: true,
+      data: {
+        user: {
+          id: req.user._id,
+          name: req.user.name,
+          email: req.user.email,
+          createdAt: req.user.createdAt,
+        },
+      },
+    });
+  }
+);
+
+export const logout = asyncHandler(
+  async (req, res) => {
+    const clearCookieOptions =
+      getAuthCookieOptions();
+
+    delete clearCookieOptions.expires;
+
+    res.clearCookie(
+      "accessToken",
+      clearCookieOptions
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Logged out successfully",
+    });
+  }
+);

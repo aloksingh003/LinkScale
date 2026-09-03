@@ -43,3 +43,39 @@ export const registerUser = async ({
     throw error;
   }
 };
+
+export const loginUser = async ({
+  email,
+  password,
+}) => {
+  const normalizedEmail = email.trim().toLowerCase();
+
+  // Password normally hidden hai, isliye explicitly select kiya
+  const user = await User.findOne({
+    email: normalizedEmail,
+  }).select("+password");
+
+  if (!user) {
+    throw new AppError(
+      "Invalid email or password",
+      401
+    );
+  }
+
+  const isPasswordCorrect =
+    await user.comparePassword(password);
+
+  if (!isPasswordCorrect) {
+    throw new AppError(
+      "Invalid email or password",
+      401
+    );
+  }
+
+  return {
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    createdAt: user.createdAt,
+  };
+};

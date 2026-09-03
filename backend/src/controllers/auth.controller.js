@@ -1,4 +1,7 @@
-import { registerUser } from "../services/auth.service.js";
+import {
+  registerUser,
+  loginUser,
+} from "../services/auth.service.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { AppError } from "../utils/appError.js";
 import {
@@ -82,6 +85,57 @@ export const register = asyncHandler(
     return res.status(201).json({
       success: true,
       message: "Account created successfully",
+      data: {
+        user,
+      },
+    });
+  }
+);
+
+export const login = asyncHandler(
+  async (req, res) => {
+    const { email, password } = req.body || {};
+
+    if (!email || !password) {
+      throw new AppError(
+        "Email and password are required",
+        400
+      );
+    }
+
+    if (
+      typeof email !== "string" ||
+      !EMAIL_PATTERN.test(email.trim())
+    ) {
+      throw new AppError(
+        "Please provide a valid email address",
+        400
+      );
+    }
+
+    if (typeof password !== "string") {
+      throw new AppError(
+        "Password must be a string",
+        400
+      );
+    }
+
+    const user = await loginUser({
+      email,
+      password,
+    });
+
+    const token = generateAuthToken(user.id);
+
+    res.cookie(
+      "accessToken",
+      token,
+      getAuthCookieOptions()
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: "Logged in successfully",
       data: {
         user,
       },

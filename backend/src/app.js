@@ -4,6 +4,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 
+import authRoutes from "./routes/auth.routes.js";
 import urlRoutes from "./routes/url.routes.js";
 import { redirectToOriginalUrl } from "./controllers/url.controller.js";
 import {
@@ -35,6 +36,7 @@ app.get("/api/v1/health", (req, res) => {
   });
 });
 
+app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/urls", urlRoutes);
 
 app.get("/:shortCode", redirectToOriginalUrl);

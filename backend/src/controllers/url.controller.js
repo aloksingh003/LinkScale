@@ -243,7 +243,10 @@ export const deactivateUrl = asyncHandler(
   async (req, res) => {
     const { shortCode } = req.params;
 
-    const url = await deactivateUrlByShortCode(shortCode);
+   const url = await deactivateUrlByShortCode(
+  shortCode,
+  req.user._id
+);
 
     return res.status(200).json({
       success: true,

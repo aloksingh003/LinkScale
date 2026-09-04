@@ -199,10 +199,14 @@ export const updateUrlByShortCode = async (
 };
 
 export const deactivateUrlByShortCode = async (
-  shortCode
+  shortCode,
+  userId
 ) => {
   const url = await Url.findOneAndUpdate(
-    { shortCode },
+    {
+      shortCode,
+      user: userId,
+    },
     {
       $set: {
         isActive: false,

@@ -23,7 +23,10 @@ export const createShortUrl = async ({
       });
     } catch (error) {
       if (error.code === 11000) {
-        throw new AppError("This custom alias is already taken", 409);
+        throw new AppError(
+          "This custom alias is already taken",
+          409
+        );
       }
 
       throw error;
@@ -94,12 +97,16 @@ export const resolveShortUrl = async (shortCode) => {
   }
 
   if (!unavailableUrl.isActive) {
-    throw new AppError("This short URL has been disabled", 410);
+    throw new AppError(
+      "This short URL has been disabled",
+      410
+    );
   }
 
   if (
     unavailableUrl.expiresAt &&
-    unavailableUrl.expiresAt.getTime() <= currentTime.getTime()
+    unavailableUrl.expiresAt.getTime() <=
+      currentTime.getTime()
   ) {
     throw new AppError("This short URL has expired", 410);
   }
@@ -107,8 +114,14 @@ export const resolveShortUrl = async (shortCode) => {
   throw new AppError("Short URL is unavailable", 404);
 };
 
-export const getUrlDetailsByShortCode = async (shortCode) => {
-  const url = await Url.findOne({ shortCode }).lean();
+export const getUrlDetailsByShortCode = async (
+  shortCode,
+  userId
+) => {
+  const url = await Url.findOne({
+    shortCode,
+    user: userId,
+  }).lean();
 
   if (!url) {
     throw new AppError("Short URL was not found", 404);
@@ -121,7 +134,7 @@ export const getPaginatedUrls = async ({
   page = 1,
   limit = 10,
   userId,
-}) =>  {
+}) => {
   const parsedPage = Number.parseInt(page, 10);
   const parsedLimit = Number.parseInt(limit, 10);
 
@@ -136,7 +149,6 @@ export const getPaginatedUrls = async ({
       : Math.min(parsedLimit, 100);
 
   const skip = (currentPage - 1) * pageSize;
-
   const filter = { user: userId };
 
   const [urls, totalUrls] = await Promise.all([

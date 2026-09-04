@@ -6,6 +6,7 @@ import {
   updateUrlByShortCode,
   deactivateUrlByShortCode,
 } from "../services/url.service.js";
+
 import { AppError } from "../utils/appError.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 
@@ -25,7 +26,10 @@ const validateAndNormalizeUrl = (urlValue) => {
   }
 
   if (!["http:", "https:"].includes(parsedUrl.protocol)) {
-    throw new AppError("Only HTTP and HTTPS URLs are allowed", 400);
+    throw new AppError(
+      "Only HTTP and HTTPS URLs are allowed",
+      400
+    );
   }
 
   return parsedUrl.toString();
@@ -76,12 +80,12 @@ export const createUrl = asyncHandler(async (req, res) => {
     normalizedAlias = customAlias.trim();
   }
 
- const url = await createShortUrl({
-  originalUrl: normalizedOriginalUrl,
-  customAlias: normalizedAlias,
-  expiresAt: normalizedExpiryDate,
-  userId: req.user._id,
-});
+  const url = await createShortUrl({
+    originalUrl: normalizedOriginalUrl,
+    customAlias: normalizedAlias,
+    expiresAt: normalizedExpiryDate,
+    userId: req.user._id,
+  });
 
   const baseUrl =
     process.env.BASE_URL ||
@@ -117,7 +121,10 @@ export const getUrlDetails = asyncHandler(
   async (req, res) => {
     const { shortCode } = req.params;
 
-    const url = await getUrlDetailsByShortCode(shortCode);
+    const url = await getUrlDetailsByShortCode(
+      shortCode,
+      req.user._id
+    );
 
     const baseUrl =
       process.env.BASE_URL ||
@@ -143,9 +150,9 @@ export const getUrlDetails = asyncHandler(
 
 export const getUrls = asyncHandler(async (req, res) => {
   const result = await getPaginatedUrls({
-  page: req.query.page,
-  limit: req.query.limit,
-  userId: req.user._id,
+    page: req.query.page,
+    limit: req.query.limit,
+    userId: req.user._id,
   });
 
   const baseUrl =
@@ -235,9 +242,7 @@ export const deactivateUrl = asyncHandler(
   async (req, res) => {
     const { shortCode } = req.params;
 
-    const url = await deactivateUrlByShortCode(
-      shortCode
-    );
+    const url = await deactivateUrlByShortCode(shortCode);
 
     return res.status(200).json({
       success: true,

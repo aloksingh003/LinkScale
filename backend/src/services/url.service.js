@@ -174,11 +174,17 @@ export const getPaginatedUrls = async ({
 
 export const updateUrlByShortCode = async (
   shortCode,
+  userId,
   updates
 ) => {
   const url = await Url.findOneAndUpdate(
-    { shortCode },
-    { $set: updates },
+    {
+      shortCode,
+      user: userId,
+    },
+    {
+      $set: updates,
+    },
     {
       new: true,
       runValidators: true,

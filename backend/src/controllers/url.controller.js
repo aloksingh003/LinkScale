@@ -221,9 +221,10 @@ export const updateUrl = asyncHandler(async (req, res) => {
   }
 
   const url = await updateUrlByShortCode(
-    shortCode,
-    updates
-  );
+  shortCode,
+  req.user._id,
+  updates
+);
 
   return res.status(200).json({
     success: true,

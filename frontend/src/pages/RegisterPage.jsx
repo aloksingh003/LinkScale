@@ -1,14 +1,20 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import api from "../services/api.js";
 import "./Auth.css";
 
 function RegisterPage() {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
     passwordConfirm: "",
   });
+
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -19,8 +25,29 @@ function RegisterPage() {
     }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+    setError("");
+
+    if (formData.password !== formData.passwordConfirm) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      await api.post("/auth/register", formData);
+
+      navigate("/dashboard");
+    } catch (requestError) {
+      setError(
+        requestError.response?.data?.message ||
+          "Unable to create account. Please try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -31,6 +58,12 @@ function RegisterPage() {
           <h1>Create your account</h1>
           <p>Start creating and managing powerful short links.</p>
         </div>
+
+        {error && (
+          <p className="auth-error" role="alert">
+            {error}
+          </p>
+        )}
 
         <form className="auth-form" onSubmit={handleSubmit}>
           <label htmlFor="name">Full name</label>
@@ -81,8 +114,8 @@ function RegisterPage() {
             required
           />
 
-          <button className="auth-button" type="submit">
-            Create Account
+          <button className="auth-button" type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Creating account..." : "Create Account"}
           </button>
         </form>
 

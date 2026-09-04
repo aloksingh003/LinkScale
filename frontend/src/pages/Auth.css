@@ -99,3 +99,18 @@
     padding: 26px 20px;
   }
 }
+
+.auth-error {
+  margin: 0 0 16px;
+  padding: 11px 13px;
+  color: #b42318;
+  background: #fef3f2;
+  border: 1px solid #fecdca;
+  border-radius: 9px;
+  font-size: 0.9rem;
+}
+
+.auth-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}

@@ -76,11 +76,12 @@ export const createUrl = asyncHandler(async (req, res) => {
     normalizedAlias = customAlias.trim();
   }
 
-  const url = await createShortUrl({
-    originalUrl: normalizedOriginalUrl,
-    customAlias: normalizedAlias,
-    expiresAt: normalizedExpiryDate,
-  });
+ const url = await createShortUrl({
+  originalUrl: normalizedOriginalUrl,
+  customAlias: normalizedAlias,
+  expiresAt: normalizedExpiryDate,
+  userId: req.user._id,
+});
 
   const baseUrl =
     process.env.BASE_URL ||

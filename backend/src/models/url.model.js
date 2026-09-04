@@ -23,11 +23,10 @@ const urlSchema = new mongoose.Schema(
     },
 
     user: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      default: null,
-      index: true,
-    },
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "User",
+  required: [true, "URL owner is required"],
+},
 
     clicks: {
       type: Number,
@@ -59,5 +58,7 @@ const urlSchema = new mongoose.Schema(
 
 // Efficiently fetch a user's newest links
 urlSchema.index({ user: 1, createdAt: -1 });
+
+
 
 export const Url = mongoose.model("Url", urlSchema);

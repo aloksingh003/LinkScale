@@ -120,7 +120,8 @@ export const getUrlDetailsByShortCode = async (shortCode) => {
 export const getPaginatedUrls = async ({
   page = 1,
   limit = 10,
-}) => {
+  userId,
+}) =>  {
   const parsedPage = Number.parseInt(page, 10);
   const parsedLimit = Number.parseInt(limit, 10);
 
@@ -136,14 +137,16 @@ export const getPaginatedUrls = async ({
 
   const skip = (currentPage - 1) * pageSize;
 
+  const filter = { user: userId };
+
   const [urls, totalUrls] = await Promise.all([
-    Url.find()
+    Url.find(filter)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(pageSize)
       .lean(),
 
-    Url.countDocuments(),
+    Url.countDocuments(filter),
   ]);
 
   return {

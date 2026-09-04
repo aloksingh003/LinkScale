@@ -143,8 +143,9 @@ export const getUrlDetails = asyncHandler(
 
 export const getUrls = asyncHandler(async (req, res) => {
   const result = await getPaginatedUrls({
-    page: req.query.page,
-    limit: req.query.limit,
+  page: req.query.page,
+  limit: req.query.limit,
+  userId: req.user._id,
   });
 
   const baseUrl =

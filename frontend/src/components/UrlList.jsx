@@ -6,6 +6,8 @@ function UrlList({ refreshKey }) {
   const [urls, setUrls] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [deactivatingCode, setDeactivatingCode] = useState("");
 
   useEffect(() => {
     let isMounted = true;
@@ -40,6 +42,34 @@ function UrlList({ refreshKey }) {
     };
   }, [refreshKey]);
 
+  const handleDeactivate = async (shortCode) => {
+    const shouldDeactivate = window.confirm(`Deactivate ${shortCode}?`);
+
+    if (!shouldDeactivate) {
+      return;
+    }
+
+    try {
+      setActionError("");
+      setDeactivatingCode(shortCode);
+
+      await api.delete(`/urls/${shortCode}`);
+
+      setUrls((currentUrls) =>
+        currentUrls.map((url) =>
+          url.shortCode === shortCode ? { ...url, isActive: false } : url,
+        ),
+      );
+    } catch (requestError) {
+      setActionError(
+        requestError.response?.data?.message ||
+          "Unable to deactivate this URL.",
+      );
+    } finally {
+      setDeactivatingCode("");
+    }
+  };
+
   if (isLoading) {
     return (
       <section className="url-list-card">
@@ -67,6 +97,12 @@ function UrlList({ refreshKey }) {
         <span>{urls.length} links</span>
       </div>
 
+      {actionError && (
+        <p className="dashboard-error" role="alert">
+          {actionError}
+        </p>
+      )}
+
       {urls.length === 0 ? (
         <p className="url-list-message">You have not created any URLs yet.</p>
       ) : (
@@ -79,6 +115,7 @@ function UrlList({ refreshKey }) {
                 <th>Clicks</th>
                 <th>Status</th>
                 <th>Created</th>
+                <th>Action</th>
               </tr>
             </thead>
 
@@ -108,6 +145,23 @@ function UrlList({ refreshKey }) {
                   </td>
 
                   <td>{new Date(url.createdAt).toLocaleDateString()}</td>
+
+                  <td>
+                    <button
+                      className="deactivate-button"
+                      type="button"
+                      disabled={
+                        !url.isActive || deactivatingCode === url.shortCode
+                      }
+                      onClick={() => handleDeactivate(url.shortCode)}
+                    >
+                      {deactivatingCode === url.shortCode
+                        ? "Deactivating..."
+                        : url.isActive
+                          ? "Deactivate"
+                          : "Inactive"}
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

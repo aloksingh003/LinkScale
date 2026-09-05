@@ -7,7 +7,7 @@ function UrlList({ refreshKey }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [actionError, setActionError] = useState("");
-  const [deactivatingCode, setDeactivatingCode] = useState("");
+  const [updatingCode, setUpdatingCode] = useState("");
 
   const totalClicks = urls.reduce(
     (sum, url) => sum + Number(url.clicks || 0),
@@ -51,31 +51,44 @@ function UrlList({ refreshKey }) {
     };
   }, [refreshKey]);
 
-  const handleDeactivate = async (shortCode) => {
-    const shouldDeactivate = window.confirm(`Deactivate ${shortCode}?`);
+  const handleStatusChange = async (url) => {
+    const action = url.isActive ? "Deactivate" : "Reactivate";
 
-    if (!shouldDeactivate) {
+    const shouldContinue = window.confirm(`${action} ${url.shortCode}?`);
+
+    if (!shouldContinue) {
       return;
     }
 
     try {
       setActionError("");
-      setDeactivatingCode(shortCode);
+      setUpdatingCode(url.shortCode);
 
-      await api.delete(`/urls/${shortCode}`);
+      if (url.isActive) {
+        await api.delete(`/urls/${url.shortCode}`);
+      } else {
+        await api.patch(`/urls/${url.shortCode}`, {
+          isActive: true,
+        });
+      }
 
       setUrls((currentUrls) =>
-        currentUrls.map((url) =>
-          url.shortCode === shortCode ? { ...url, isActive: false } : url,
+        currentUrls.map((currentUrl) =>
+          currentUrl.shortCode === url.shortCode
+            ? {
+                ...currentUrl,
+                isActive: !url.isActive,
+              }
+            : currentUrl,
         ),
       );
     } catch (requestError) {
       setActionError(
         requestError.response?.data?.message ||
-          "Unable to deactivate this URL.",
+          `Unable to ${action.toLowerCase()} this URL.`,
       );
     } finally {
-      setDeactivatingCode("");
+      setUpdatingCode("");
     }
   };
 
@@ -179,18 +192,18 @@ function UrlList({ refreshKey }) {
 
                   <td>
                     <button
-                      className="deactivate-button"
-                      type="button"
-                      disabled={
-                        !url.isActive || deactivatingCode === url.shortCode
+                      className={
+                        url.isActive ? "deactivate-button" : "reactivate-button"
                       }
-                      onClick={() => handleDeactivate(url.shortCode)}
+                      type="button"
+                      disabled={updatingCode === url.shortCode}
+                      onClick={() => handleStatusChange(url)}
                     >
-                      {deactivatingCode === url.shortCode
-                        ? "Deactivating..."
+                      {updatingCode === url.shortCode
+                        ? "Updating..."
                         : url.isActive
                           ? "Deactivate"
-                          : "Inactive"}
+                          : "Reactivate"}
                     </button>
                   </td>
                 </tr>

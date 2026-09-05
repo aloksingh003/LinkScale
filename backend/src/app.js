@@ -11,6 +11,7 @@ import {
   errorHandler,
   notFound,
 } from "./middleware/error.middleware.js";
+import { apiLimiter } from "./middleware/rateLimit.middleware.js";
 
 const app = express();
 
@@ -35,6 +36,8 @@ app.get("/api/v1/health", (req, res) => {
     message: "LinkScale API is running",
   });
 });
+
+app.use("/api/v1", apiLimiter);
 
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/urls", urlRoutes);

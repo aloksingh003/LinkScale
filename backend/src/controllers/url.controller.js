@@ -111,6 +111,13 @@ export const redirectToOriginalUrl = asyncHandler(
   async (req, res) => {
     const { shortCode } = req.params;
 
+    res.set({
+      "Cache-Control":
+        "no-store, no-cache, must-revalidate, proxy-revalidate",
+      Pragma: "no-cache",
+      Expires: "0",
+    });
+
     const originalUrl = await resolveShortUrl(shortCode);
 
     return res.redirect(302, originalUrl);

@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../services/api.js";
+import { useAuth } from "../hooks/useAuth.js";
 import "./Auth.css";
 
 function LoginPage() {
   const navigate = useNavigate();
+  const { setUser } = useAuth();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -30,8 +32,9 @@ function LoginPage() {
     try {
       setIsSubmitting(true);
 
-      await api.post("/auth/login", formData);
+      const response = await api.post("/auth/login", formData);
 
+      setUser(response.data.data.user);
       navigate("/dashboard");
     } catch (requestError) {
       setError(

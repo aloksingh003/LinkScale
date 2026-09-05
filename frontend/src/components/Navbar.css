@@ -69,3 +69,34 @@
     justify-content: center;
   }
 }
+
+.user-greeting {
+  padding: 8px 4px;
+  color: #30384d;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.logout-button {
+  padding: 9px 14px;
+  color: #b42318;
+  background: #fef3f2;
+  border: 1px solid #fecdca;
+  border-radius: 9px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.logout-button:hover {
+  background: #fee4e2;
+}
+
+.logout-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.logout-error {
+  color: #b42318;
+  font-size: 0.8rem;
+}

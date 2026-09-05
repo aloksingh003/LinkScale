@@ -1,12 +1,18 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import api from "../services/api.js";
 import "./Auth.css";
 
 function LoginPage() {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
+
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -17,8 +23,24 @@ function LoginPage() {
     }));
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+    setError("");
+
+    try {
+      setIsSubmitting(true);
+
+      await api.post("/auth/login", formData);
+
+      navigate("/dashboard");
+    } catch (requestError) {
+      setError(
+        requestError.response?.data?.message ||
+          "Unable to login. Please try again.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -29,6 +51,12 @@ function LoginPage() {
           <h1>Login to LinkScale</h1>
           <p>Manage and track all your shortened links.</p>
         </div>
+
+        {error && (
+          <p className="auth-error" role="alert">
+            {error}
+          </p>
+        )}
 
         <form className="auth-form" onSubmit={handleSubmit}>
           <label htmlFor="email">Email address</label>
@@ -55,8 +83,8 @@ function LoginPage() {
             required
           />
 
-          <button className="auth-button" type="submit">
-            Login
+          <button className="auth-button" type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Logging in..." : "Login"}
           </button>
         </form>
 

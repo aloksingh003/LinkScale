@@ -11,3 +11,11 @@
   margin: 0 auto;
   padding: 48px 24px;
 }
+
+.route-loading {
+  min-height: 60vh;
+  display: grid;
+  place-items: center;
+  color: #596176;
+  font-weight: 600;
+}

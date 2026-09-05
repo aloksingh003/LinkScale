@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../services/api.js";
+import { useAuth } from "../hooks/useAuth.js";
 import "./Auth.css";
 
 function RegisterPage() {
   const navigate = useNavigate();
+  const { setUser } = useAuth();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -37,8 +39,9 @@ function RegisterPage() {
     try {
       setIsSubmitting(true);
 
-      await api.post("/auth/register", formData);
+      const response = await api.post("/auth/register", formData);
 
+      setUser(response.data.data.user);
       navigate("/dashboard");
     } catch (requestError) {
       setError(

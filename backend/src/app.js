@@ -15,12 +15,17 @@ import { apiLimiter } from "./middleware/rateLimit.middleware.js";
 
 const app = express();
 
+if (process.env.NODE_ENV === "production") {
+  app.set("trust proxy", 1);
+}
+
 app.use(helmet());
 
 app.use(
   cors({
     origin:
-      process.env.CLIENT_URL || "http://localhost:5173",
+      process.env.CLIENT_URL ||
+      "http://localhost:5173",
     credentials: true,
   })
 );

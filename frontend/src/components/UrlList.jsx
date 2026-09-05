@@ -9,6 +9,15 @@ function UrlList({ refreshKey }) {
   const [actionError, setActionError] = useState("");
   const [deactivatingCode, setDeactivatingCode] = useState("");
 
+  const totalClicks = urls.reduce(
+    (sum, url) => sum + Number(url.clicks || 0),
+    0,
+  );
+
+  const activeLinks = urls.filter((url) => url.isActive).length;
+
+  const inactiveLinks = urls.length - activeLinks;
+
   useEffect(() => {
     let isMounted = true;
 
@@ -95,6 +104,28 @@ function UrlList({ refreshKey }) {
         </div>
 
         <span>{urls.length} links</span>
+      </div>
+
+      <div className="analytics-grid">
+        <article className="analytics-card">
+          <span>Total links</span>
+          <strong>{urls.length}</strong>
+        </article>
+
+        <article className="analytics-card">
+          <span>Active links</span>
+          <strong>{activeLinks}</strong>
+        </article>
+
+        <article className="analytics-card">
+          <span>Inactive links</span>
+          <strong>{inactiveLinks}</strong>
+        </article>
+
+        <article className="analytics-card">
+          <span>Total clicks</span>
+          <strong>{totalClicks}</strong>
+        </article>
       </div>
 
       {actionError && (

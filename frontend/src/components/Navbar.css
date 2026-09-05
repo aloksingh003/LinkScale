@@ -6,6 +6,9 @@
   background: rgba(255, 255, 255, 0.95);
   border-bottom: 1px solid #e7eaf0;
   backdrop-filter: blur(12px);
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .navbar-content {
@@ -57,19 +60,6 @@
   background: #1946c4;
 }
 
-@media (max-width: 650px) {
-  .navbar-content {
-    padding: 12px 16px;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .nav-links {
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-}
-
 .user-greeting {
   padding: 8px 4px;
   color: #30384d;
@@ -99,4 +89,79 @@
 .logout-error {
   color: #b42318;
   font-size: 0.8rem;
+}
+
+.theme-toggle {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: #f5f7fb;
+  border: 1px solid #dfe4ec;
+  border-radius: 10px;
+  font-size: 1.05rem;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.theme-toggle:hover {
+  background: #eef3ff;
+  border-color: #b9c9f7;
+  transform: translateY(-1px);
+}
+
+:root[data-theme="dark"] .navbar {
+  background: rgba(15, 23, 42, 0.95);
+  border-bottom-color: #273449;
+}
+
+:root[data-theme="dark"] .nav-link {
+  color: #cbd5e1;
+}
+
+:root[data-theme="dark"] .nav-link:hover,
+:root[data-theme="dark"] .nav-link.active {
+  color: #8fb1ff;
+  background: #1e3356;
+}
+
+:root[data-theme="dark"] .user-greeting {
+  color: #e2e8f0;
+}
+
+:root[data-theme="dark"] .logout-button {
+  color: #fca5a5;
+  background: #3f1d24;
+  border-color: #7f1d2d;
+}
+
+:root[data-theme="dark"] .logout-button:hover {
+  background: #521f29;
+}
+
+:root[data-theme="dark"] .theme-toggle {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+:root[data-theme="dark"] .theme-toggle:hover {
+  background: #27364d;
+  border-color: #4b6384;
+}
+
+@media (max-width: 650px) {
+  .navbar-content {
+    padding: 12px 16px;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .nav-links {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
 }

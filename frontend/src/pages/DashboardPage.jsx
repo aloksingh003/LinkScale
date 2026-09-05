@@ -1,6 +1,7 @@
 import { useState } from "react";
 import api from "../services/api.js";
 import { useAuth } from "../hooks/useAuth.js";
+import UrlList from "../components/UrlList.jsx";
 import "./Dashboard.css";
 
 function DashboardPage() {
@@ -16,6 +17,7 @@ function DashboardPage() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -50,6 +52,7 @@ function DashboardPage() {
       const response = await api.post("/urls", requestBody);
 
       setCreatedUrl(response.data.data);
+      setRefreshKey((currentKey) => currentKey + 1);
       setMessage("Short URL created successfully");
 
       setFormData({
@@ -170,6 +173,7 @@ function DashboardPage() {
           </div>
         )}
       </section>
+      <UrlList refreshKey={refreshKey} />
     </main>
   );
 }

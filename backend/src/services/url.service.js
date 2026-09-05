@@ -1,8 +1,51 @@
 import { Url } from "../models/url.model.js";
 import { generateShortCode } from "../utils/generateShortCode.js";
 import { AppError } from "../utils/appError.js";
+import {
+  deleteCachedValue,
+  getCachedValue,
+  setCachedValue,
+} from "./cache.service.js";
 
 const MAX_GENERATION_ATTEMPTS = 5;
+const REDIRECT_CACHE_TTL_SECONDS = 60 * 60;
+
+const getRedirectCacheKey = (shortCode) => {
+  return `linkscale:redirect:${shortCode}`;
+};
+
+const getRedirectCacheTtl = (expiresAt) => {
+  if (!expiresAt) {
+    return REDIRECT_CACHE_TTL_SECONDS;
+  }
+
+  const secondsUntilExpiry = Math.floor(
+    (new Date(expiresAt).getTime() - Date.now()) / 1000
+  );
+
+  return Math.max(
+    1,
+    Math.min(
+      REDIRECT_CACHE_TTL_SECONDS,
+      secondsUntilExpiry
+    )
+  );
+};
+
+const getAvailableUrlFilter = (
+  shortCode,
+  currentTime
+) => {
+  return {
+    shortCode,
+    isActive: true,
+    $or: [
+      { expiresAt: null },
+      { expiresAt: { $exists: false } },
+      { expiresAt: { $gt: currentTime } },
+    ],
+  };
+};
 
 export const createShortUrl = async ({
   originalUrl,
@@ -11,7 +54,9 @@ export const createShortUrl = async ({
   userId = null,
 }) => {
   const alias =
-    typeof customAlias === "string" ? customAlias.trim() : "";
+    typeof customAlias === "string"
+      ? customAlias.trim()
+      : "";
 
   if (alias) {
     try {
@@ -64,17 +109,29 @@ export const createShortUrl = async ({
 
 export const resolveShortUrl = async (shortCode) => {
   const currentTime = new Date();
+  const cacheKey = getRedirectCacheKey(shortCode);
+
+  const cachedOriginalUrl =
+    await getCachedValue(cacheKey);
+
+  if (cachedOriginalUrl) {
+    const clickUpdateResult = await Url.updateOne(
+      getAvailableUrlFilter(shortCode, currentTime),
+      {
+        $inc: { clicks: 1 },
+        $set: { lastAccessedAt: currentTime },
+      }
+    );
+
+    if (clickUpdateResult.matchedCount === 1) {
+      return cachedOriginalUrl;
+    }
+
+    await deleteCachedValue(cacheKey);
+  }
 
   const url = await Url.findOneAndUpdate(
-    {
-      shortCode,
-      isActive: true,
-      $or: [
-        { expiresAt: null },
-        { expiresAt: { $exists: false } },
-        { expiresAt: { $gt: currentTime } },
-      ],
-    },
+    getAvailableUrlFilter(shortCode, currentTime),
     {
       $inc: { clicks: 1 },
       $set: { lastAccessedAt: currentTime },
@@ -85,15 +142,28 @@ export const resolveShortUrl = async (shortCode) => {
   );
 
   if (url) {
+    await setCachedValue(
+      cacheKey,
+      url.originalUrl,
+      getRedirectCacheTtl(url.expiresAt)
+    );
+
     return url.originalUrl;
   }
 
-  const unavailableUrl = await Url.findOne({ shortCode })
+  await deleteCachedValue(cacheKey);
+
+  const unavailableUrl = await Url.findOne({
+    shortCode,
+  })
     .select("isActive expiresAt")
     .lean();
 
   if (!unavailableUrl) {
-    throw new AppError("Short URL was not found", 404);
+    throw new AppError(
+      "Short URL was not found",
+      404
+    );
   }
 
   if (!unavailableUrl.isActive) {
@@ -108,10 +178,16 @@ export const resolveShortUrl = async (shortCode) => {
     unavailableUrl.expiresAt.getTime() <=
       currentTime.getTime()
   ) {
-    throw new AppError("This short URL has expired", 410);
+    throw new AppError(
+      "This short URL has expired",
+      410
+    );
   }
 
-  throw new AppError("Short URL is unavailable", 404);
+  throw new AppError(
+    "Short URL is unavailable",
+    404
+  );
 };
 
 export const getUrlDetailsByShortCode = async (
@@ -124,7 +200,10 @@ export const getUrlDetailsByShortCode = async (
   }).lean();
 
   if (!url) {
-    throw new AppError("Short URL was not found", 404);
+    throw new AppError(
+      "Short URL was not found",
+      404
+    );
   }
 
   return url;
@@ -167,7 +246,9 @@ export const getPaginatedUrls = async ({
       currentPage,
       pageSize,
       totalUrls,
-      totalPages: Math.ceil(totalUrls / pageSize),
+      totalPages: Math.ceil(
+        totalUrls / pageSize
+      ),
     },
   };
 };
@@ -192,8 +273,15 @@ export const updateUrlByShortCode = async (
   );
 
   if (!url) {
-    throw new AppError("Short URL was not found", 404);
+    throw new AppError(
+      "Short URL was not found",
+      404
+    );
   }
+
+  await deleteCachedValue(
+    getRedirectCacheKey(shortCode)
+  );
 
   return url;
 };
@@ -218,8 +306,15 @@ export const deactivateUrlByShortCode = async (
   );
 
   if (!url) {
-    throw new AppError("Short URL was not found", 404);
+    throw new AppError(
+      "Short URL was not found",
+      404
+    );
   }
+
+  await deleteCachedValue(
+    getRedirectCacheKey(shortCode)
+  );
 
   return url;
 };
